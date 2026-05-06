@@ -113,11 +113,9 @@ export const MessageLine = memo(function MessageLine({
       return <Text color={t.color.muted}>{msg.text}</Text>
     }
 
-    if (msg.role !== 'user' && hasAnsi(msg.text)) {
-      return <Ansi>{msg.text}</Ansi>
-    }
-
     // ── Collapsible long system message (system prompt, AGENTS.md, etc.) ──
+    // MUST come before the hasAnsi check — system messages from the backend
+    // contain Rich markup escape codes.
     if (systemIsLong) {
       const firstLine = (msg.text.split('\n')[0] ?? '').trim().slice(0, 120) || '(system message)'
 
@@ -131,9 +129,13 @@ export const MessageLine = memo(function MessageLine({
               {msg.text.length.toLocaleString()} chars
             </Text>
           </Box>
-          {systemOpen && <Text color={t.color.muted}>{msg.text}</Text>}
+          {systemOpen && <Ansi>{msg.text}</Ansi>}
         </Box>
       )
+    }
+
+    if (msg.role !== 'user' && hasAnsi(msg.text)) {
+      return <Ansi>{msg.text}</Ansi>
     }
 
     if (msg.role === 'assistant') {
