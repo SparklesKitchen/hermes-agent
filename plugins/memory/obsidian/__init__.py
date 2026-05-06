@@ -165,10 +165,13 @@ class ObsidianMemoryProvider(MemoryProvider):
         checkpoints = re.findall(checkpoint_pattern, raw_content)
 
         for turn_num, block in checkpoints:
-            # Find user messages in this block
-            user_lines = re.findall(r'\[user\] (.*)', block)
+            # Find user messages in this block — must be exact [user] tag at start of line
+            user_lines = re.findall(r'^[ ]*\[user\] (.*)', block, re.MULTILINE)
             for line in user_lines:
                 line = line.strip()
+                # Skip lines that look like pasted chat history (start with [date] or [HH:MM])
+                if re.match(r'^\[\d{2}[/-]\d{2}', line):
+                    continue
                 if line and not line.startswith('<') and len(line) > 10:
                     # Check if it's a request (imperative or question)
                     if any(line.lower().startswith(w) for w in ['can you', 'could you', 'please', 'want', 'need', 'fix', 'build', 'create', 'update', 'delete', 'add', 'remove', 'uninstall', 'install', 'restart', 'stop', 'start', 'do ', 'make ', 'help ', 'try ', 'let\'s ', 'let us']):
