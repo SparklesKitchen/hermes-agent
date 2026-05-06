@@ -658,7 +658,8 @@ class ObsidianMemoryProvider(MemoryProvider):
             return f"{match.group(1)}-{match.group(2)}-{match.group(3)}"
         return ""
 
-    def on_agent_complete(self, agent_name: str, task: str, result: str) -> None:
+    def on_delegation(self, task: str, result: str, *,
+                      child_session_id: str = "", **kwargs) -> None:
         """Log subagent work to Memory/agents/{date}/{agent_name}.md"""
         if not self._agents_dir:
             return
@@ -667,6 +668,8 @@ class ObsidianMemoryProvider(MemoryProvider):
         agent_dir = self._agents_dir / today
         agent_dir.mkdir(exist_ok=True)
 
+        # Extract agent name from kwargs or use default
+        agent_name = kwargs.get("agent_name", "unknown")
         log_file = agent_dir / f"{agent_name}.md"
         timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -682,6 +685,9 @@ class ObsidianMemoryProvider(MemoryProvider):
             logger.debug("Agent log written: %s", log_file.name)
         except OSError as e:
             logger.debug("Agent log failed: %s", e)
+
+    # Alias for backwards compatibility
+    on_agent_complete = on_delegation
 
     def search_agent_memory(self, query: str, limit: int = 5) -> str:
         """Semantic search across all agent logs, sessions, and daily notes.
